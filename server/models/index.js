@@ -8,7 +8,7 @@ db.connect(function(error){
     console.log('Connection to database successful');
   }
 });
-
+/*
 var getRoom = function(roomID, callback){
   db.query('select roomName from room where roomID = ?', roomID, function(err, result){
     if (err) {
@@ -28,7 +28,7 @@ var getUser = function(userID, callback){
     }
   });
 };
-/*
+
 [ RowDataPacket { messageText: 'hello', roomID: '20', userID: '15', messageID: 1 },
 
   RowDataPacket {
@@ -49,7 +49,7 @@ roomname []
 username []
 
 
-*/
+
 var reformatResults = function(data, callback){
   var reformatted = {
     results: []
@@ -58,6 +58,7 @@ var reformatResults = function(data, callback){
     var temp = {
       text: data[i].messageText
     };
+
     getRoom(data[i].roomID, function(result){
       console.log(1);
       temp.roomname = result;
@@ -65,36 +66,64 @@ var reformatResults = function(data, callback){
     getUser(data[i].userID, function(result){
       temp.username = result;
     });
+
     reformatted.results.push(temp);
   }
   console.log('reformatted', reformatted);
   console.log(2);
   callback(reformatted);
 }
+*/
 
 
 module.exports = {
   messages: {
     get: function (callBack) {
       //query db
-      db.query('select * from messages', function(error, result){
+      db.query('select messages.messageID as id, messages.messageText as text, user.userName as username, \
+       room.roomName as roomname from messages, user, room', function(error, result){
         if(error){
           console.log('Request failed');
         } else {
-            reformatResults(result, function(reformatted){
-              callBack(reformatted);
-            });
+            callBack(result);
         }
       });
       
     }, // a function which produces all the messages
-    post: function () {} // a function which can be used to insert a message into the database
+    post: function (params, callBack) {
+      //params = [text, username, roomname]
+      db.query('insert into messages (messageText, userID, roomID) values (?, (select userID from user where userName = ?), \
+                  (select roomID from room where roomName = ?))', params, function(err, results){
+        if (err) {
+          console.log('Message POST Error');
+        } else {
+          callBack(results);
+        }
+      });
+    } // a function which can be used to insert a message into the database
+
   },
 
   users: {
     // Ditto as above.
-    get: function () {},
-    post: function () {}
+    get: function (callback) {
+      db.query('select * from user', function(error, results){
+        if (error) {
+          console.log('Users GET Error');
+        } else {
+          callback(results);
+        }
+      });
+    },
+    post: function (params, callback) {
+      db.query('insert into user (userName) value (?)', params, function(error, result) {
+        if (error) {
+          console.log('Users POST Error');
+        } else {
+          callback(result);
+        }
+      });
+    }
   }
 };
 

@@ -53,7 +53,7 @@ $(function() {
 
       // POST the message to the server
       $.ajax({
-        url: clientApp.server,
+        url: clientApp.server + '/messages',
         type: 'POST',
         data: JSON.stringify(data),
         contentType: 'application/json',
